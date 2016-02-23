@@ -164,9 +164,19 @@ function table(values, options){
 			}
 		}
 		
-		
-		/** Decree the rowBuffer count */
-		buffer && --buffer;
+		/** Nah, somewhere in the body */
+		else{
+			
+			/** Decree the rowBuffer count if we're still making up for line-breaks */
+			if(buffer) --buffer;
+			
+			/** Nope, no more breakage. Add a divider? */
+			else if(borders && r < rowCount - 1){
+				s += "├";
+				for(let r = 0; r < numColumns; ++r)
+					s += "─".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "┼" : "┤\n");
+			}
+		}
 	}
 	
 	

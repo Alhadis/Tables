@@ -11,11 +11,11 @@ let data = fs.readFileSync("list.tsv")
 
 
 let str = table(data, {
-	width: process.stdout.columns - 5,
-	borders: true
+	width: process.stdout.columns,
+	borders: true,
+	borderChars: fs.readFileSync("border-demo.txt").toString().replace(/\n+$/, "")
 });
 console.log(str);
-
 
 
 function table(values, options){
@@ -23,21 +23,46 @@ function table(values, options){
 
 	let noHeaders        = options.noHeaders;
 	let borders          = options.borders;
-	let borderHeadStart  = options.borderHeadStart || "┏━┳┓";
-	let borderHead       = options.borderHead      || "┃ ┃┃";
-	let borderHeadEnd    = options.borderHeadEnd   || "┡━╇┩";
-	let borderBodyStart  = options.borderBodyStart || "┌─┬┐"
-	let borderBody       = options.borderBody      || "├─┼┤│";
-	let borderBodyEnd    = options.borderBodyEnd   || "└─┴┘";
-	let paddingLeft      = options.paddingLeft     || 1;
-	let paddingRight     = options.paddingRight    || 1;
+	let paddingLeft      = options.paddingLeft  || 1;
+	let paddingRight     = options.paddingRight || 1;
 	let padding          = paddingLeft + paddingRight;
 	let width            = options.width;
 	
+	/** Resolve border characters */
+	let borderChars      = "";
+	if(borders){
+		borderChars = (options.borderChars || `
+		  ┏━┳━┳━┓
+		  ┃ ┃ ┃ ┃
+		  ┡━╇━╇━┩
+		  ┌─┬─┬─┐
+		  │ │ │ │ 
+		  ├─┼─┼─┤
+		  └─┴─┴─┘
+		`)
+			/** Normalise line-endings, just in case... */
+			.replace(/\r\n/g, "\n")
+			
+			/** Strip blank lines and hard-tabs */
+			.replace(/^[\x20\t]*\n|\n[\x20\t]*(?=\n|$)/gm, "")
+			.replace(/\t+/g, "");
+		
+		/** Determine the minimum amount of useless whitespace prefixing each line */
+		const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
+		
+		/** Strip leading soft-tabs */
+		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "");
+		
+		/** Error-handling: If an author doesn't want any vertical dividers, reinsert blank lines */
+		const blank = "\n" + " ".repeat(7) + "\n";
+		if(" " !== borderChars[9])  borderChars = borderChars.replace(/\n/, blank);
+		if(" " !== borderChars[33]) borderChars = borderChars.substr(0, 31) + blank + borderChars.substr(40);
+	}
+	
 	
 	/** Determine the maximum size of each column */
-	let maxLengths    = [];
-	let numColumns    = 0;
+	let maxLengths  = [];
+	let numColumns  = 0;
 	for(let row of values){
 		
 		/** Record the maximum number of columns in case cell-count is inconsistent */
@@ -55,7 +80,7 @@ function table(values, options){
 	const minWidth = maxLengths.reduce((a, b) => a + b + padding + (borders ? 1 : 0));
 	
 	/** If a desired width was specified, calculate a multiplier */
-	const sizeModifier   = width ? (width / minWidth) : 1;
+	const sizeModifier = width ? (width / minWidth) : 1;
 	
 
 	/** Number of extra rows inserted to contain a multi-line value */
@@ -71,10 +96,13 @@ function table(values, options){
 	
 	/** Add the top divider */
 	if(borders){
-		let chars = noHeaders ? "┌─┬┐" : "┏━┳┓";
+		let chars = borderChars.substr(noHeaders ? 24 : 0, 7);
+		
 		s += chars[0];
 		for(let r = 0; r < numColumns; ++r)
-			s += chars[1].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? chars[2] : chars[3]);
+			s += chars[r ? (r < numColumns - 1 ? 3 : 5) : 1]
+				.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				+ chars[r < numColumns - 1 ? 2 : 6];
 		s += "\n";
 	}
 	
@@ -91,7 +119,7 @@ function table(values, options){
 			if(/\n/.test(text)){
 				const lines   = text.split(/\n/g);
 				let numLines  = lines.length;
-				let injectOffset = 1;				
+				let injectOffset = 1;
 				
 				/** Replace the original cell's content with the first line, and remove it from the lines to be inserted */
 				text = lines.shift();
@@ -126,15 +154,15 @@ function table(values, options){
 			if(borders){
 				
 				/** Left-edge/first cell */
-				if(!i) leftBorder = inHeader ? "┃" : "│";
+				if(!i) leftBorder = borderChars[inHeader ? 8 : 32];
 				
 				
 				/** Right-edge/last cell */
-				if(i >= numColumns)
-					rightBorder = inHeader ? "┃" : "│";
+				if(i >= numColumns - 1)
+					rightBorder = borderChars[inHeader ? 14 : 38];
 				
 				/** Neither */
-				else rightBorder = inHeader ? "┃" : "│";
+				else rightBorder = borderChars[inHeader ? 10 : 34];
 			}
 			
 			
@@ -157,9 +185,12 @@ function table(values, options){
 				
 				/** Add a divider */
 				if(borders){
-					s += "┡";
+					s += borderChars[16];
 					for(let r = 0; r < numColumns; ++r)
-						s += "━".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "╇" : "┩\n");
+						s += borderChars[r ? (r < numColumns - 1 ? 19 : 21) : 17]
+							.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+							+ borderChars[r < numColumns - 1 ? 18 : 22];
+					s += "\n";
 				}
 			}
 		}
@@ -172,9 +203,12 @@ function table(values, options){
 			
 			/** Nope, no more breakage. Add a divider? */
 			else if(borders && r < rowCount - 1){
-				s += "├";
+				s += borderChars[41];
 				for(let r = 0; r < numColumns; ++r)
-					s += "─".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "┼" : "┤\n");
+					s += borderChars[r ? (r < numColumns - 1 ? 44 : 46) : 42]
+						.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+						+ borderChars[r < numColumns - 1 ? 43 : 47];
+				s += "\n";
 			}
 		}
 	}
@@ -182,9 +216,11 @@ function table(values, options){
 	
 	/** Add the closing border to the bottom of our table */
 	if(borders){
-		s += "└";
+		s += borderChars[49];
 		for(let r = 0; r < numColumns; ++r)
-			s += "─".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "┴" : "┘");
+			s += borderChars[r ? (r < numColumns - 1 ? 52 : 54) : 50]
+				.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				+ borderChars[r < numColumns - 1 ? 51 : 55];
 	}
 	
 	return s;

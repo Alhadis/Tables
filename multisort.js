@@ -11,7 +11,7 @@ let data = fs.readFileSync("list.tsv")
 
 
 let str = table(data, {
-	width: process.stdout.columns,
+	width: process.stdout.columns - 5,
 	borders: true
 });
 console.log(str);
@@ -74,7 +74,7 @@ function table(values, options){
 		let chars = noHeaders ? "┌─┬┐" : "┏━┳┓";
 		s += chars[0];
 		for(let r = 0; r < numColumns; ++r)
-			s += chars[1].repeat((padding + maxLengths[r]) * sizeModifier) + (r < numColumns - 1 ? chars[2] : chars[3]);
+			s += chars[1].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? chars[2] : chars[3]);
 		s += "\n";
 	}
 	
@@ -142,7 +142,7 @@ function table(values, options){
 			s += leftBorder +
 				" ".repeat(paddingLeft) +
 				text +
-				" ".repeat(((paddingRight + maxLengths[i]) * sizeModifier) - text.length) +
+				" ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length) +
 				rightBorder;
 		}
 		
@@ -159,7 +159,7 @@ function table(values, options){
 				if(borders){
 					s += "┡";
 					for(let r = 0; r < numColumns; ++r)
-						s += "━".repeat((padding + maxLengths[r]) * sizeModifier) + (r < numColumns - 1 ? "╇" : "┩\n");
+						s += "━".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "╇" : "┩\n");
 				}
 			}
 		}
@@ -174,7 +174,7 @@ function table(values, options){
 	if(borders){
 		s += "└";
 		for(let r = 0; r < numColumns; ++r)
-			s += "─".repeat((padding + maxLengths[r]) * sizeModifier) + (r < numColumns - 1 ? "┴" : "┘");
+			s += "─".repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier)) + (r < numColumns - 1 ? "┴" : "┘");
 	}
 	
 	return s;

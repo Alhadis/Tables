@@ -2,22 +2,6 @@
 "use strict";
 
 
-const fs = require("fs");
-let data = fs.readFileSync("list.tsv")
-	.toString()
-	.split(/\n+/g)
-	.filter(e => e)
-	.map(e => e.replace(/\\n/g, "\n").split(/\t/g));
-
-
-let str = table(data, {
-	width: process.stdout.columns,
-	borders: true,
-	borderChars: fs.readFileSync("border-demo.txt").toString().replace(/\n+$/, "")
-});
-console.log(str);
-
-
 function table(values, options){
 	options              = options || {};
 
@@ -225,3 +209,21 @@ function table(values, options){
 	
 	return s;
 }
+
+
+
+
+const fs = require("fs");
+let data = fs.readFileSync("list.tsv")
+	.toString()
+	.split(/\n+/g)
+	.filter(e => e)
+	.map(e => e.replace(/\\n/g, "\n").split(/\t/g));
+
+
+let str = table(data, {
+	width: process.stdout.columns,
+	borders: true,
+	borderChars: fs.readFileSync("border-demo.txt").toString().replace(/\n+$/, "")
+});
+console.log(str);

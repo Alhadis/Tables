@@ -86,17 +86,17 @@ function table(values, options){
 	if(borders){
 		let chars = borderChars.substr(noHeaders ? 30 : 0, 9);
 		
-		s += chars[0];
+		s += chars[0] || " ";
 		for(let r = 0; r < numColumns; ++r)
-			s += chars[r
+			s += (chars[r
 					? r < secondLast
 						? 3
 						: r === secondLast
 							? 5
 							: 7
 					: 1
-				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-				+ chars[r
+				] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				+ (chars[r
 					? r < lastColumn
 						? r
 							? r < secondLast
@@ -105,7 +105,7 @@ function table(values, options){
 							: 6
 						: 8
 					: 2
-				];
+				] || " ");
 		s += "\n";
 	}
 	
@@ -161,11 +161,11 @@ function table(values, options){
 					leftBorder = borderChars[inHeader
 						? 10
 						: 40
-					];
+					] || " ";
 					rightBorder = borderChars[inHeader
 						? 12
 						: 42
-					];
+					] || " ";
 				}
 				
 				
@@ -179,17 +179,18 @@ function table(values, options){
 							: inHeader
 								? 18
 								: 48
-					];
+					] || " ";
 				
 				/** Centre */
-				else rightBorder = borderChars[inHeader
+				else
+					rightBorder = borderChars[inHeader
 						? i
 							? 14
 							: 12
 						: i
 							? 44
 							: 42
-					];
+					] || " ";
 			}
 			
 			
@@ -213,22 +214,23 @@ function table(values, options){
 				
 				/** Add a divider */
 				if(borders){
-					s += borderChars[20];
+					s += borderChars[20] || " ";
 					for(let r = 0; r < numColumns; ++r)
-						s += borderChars[r
+						s += (borderChars[r
 								? r < secondLast
 									? 23
 									: r === secondLast
 										? 25
 										: 27
-								: 21]
+								: 21] || " "
+							)
 							.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-							+ borderChars[r < lastColumn
+							+ (borderChars[r < lastColumn
 								? 22
 								: r < secondLast
 									? 25
 									: 28
-							];
+							] || " ");
 					s += "\n";
 				}
 			}
@@ -243,24 +245,24 @@ function table(values, options){
 			
 			/** Nope, no more breakage. Add a divider? */
 			else if(borders && r < rowCount - 1){
-				s += borderChars[50];
+				s += borderChars[50] || " ";
 				for(let r = 0; r < numColumns; ++r)
-					s += borderChars[r
+					s += (borderChars[r
 						? r < secondLast
 							? 53
 							: r === secondLast
 								? 55
 								: 57
 						: 51
-					].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-					+ borderChars[r < secondLast
+					] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+					+ (borderChars[r < secondLast
 						? r
 							? 54
 							: 52
 						: r === secondLast
 							? 56
 							: 58
-					];
+					] || " ");
 				s += "\n";
 			}
 		}
@@ -269,24 +271,24 @@ function table(values, options){
 	
 	/** Add the closing border to the bottom of our table */
 	if(borders){
-		s += borderChars[60];
+		s += borderChars[60] || " ";
 		for(let r = 0; r < numColumns; ++r)
-			s += borderChars[r
+			s += (borderChars[r
 				? r < secondLast
 					? 63
 					: r === lastColumn
 						? 67
 						: 65
 				: 61
-			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-			+ borderChars[r
+			] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+			+ (borderChars[r
 				? r < secondLast
 					? 64
 					: r === lastColumn
 						? 68
 						: 66
 				: 62
-			];
+			] || " ");
 	}
 	
 	return s;

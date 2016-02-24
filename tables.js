@@ -16,13 +16,13 @@ function table(values, options){
 	let borderChars      = "";
 	if(borders){
 		borderChars = (options.borderChars || `
-		  ┏━┳━┳━┓
-		  ┃ ┃ ┃ ┃
-		  ┡━╇━╇━┩
-		  ┌─┬─┬─┐
-		  │ │ │ │ 
-		  ├─┼─┼─┤
-		  └─┴─┴─┘
+		  ┏━┳━┳━┳━┓
+		  ┃ ┃ ┃ ┃ ┃
+		  ┡━╇━╇━╇━┩
+		  ┌─┬─┬─┬─┐
+		  │ │ │ │ │
+		  ├─┼─┼─┼─┤
+		  └─┴─┴─┴─┘
 		`)
 			/** Normalise line-endings, just in case... */
 			.replace(/\r\n/g, "\n")
@@ -38,9 +38,9 @@ function table(values, options){
 		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "");
 		
 		/** Error-handling: If an author doesn't want any vertical dividers, reinsert blank lines */
-		const blank = "\n" + " ".repeat(7) + "\n";
-		if(" " !== borderChars[9])  borderChars = borderChars.replace(/\n/, blank);
-		if(" " !== borderChars[33]) borderChars = borderChars.substr(0, 31) + blank + borderChars.substr(40);
+		const blank = "\n" + " ".repeat(9) + "\n";
+		if(" " !== borderChars[11])  borderChars = borderChars.replace(/\n/, blank);
+		if(" " !== borderChars[41])  borderChars = borderChars.substr(0, 39) + blank + borderChars.substr(40);
 	}
 	
 	
@@ -75,18 +75,37 @@ function table(values, options){
 	let inHeader = !noHeaders;
 	
 	
+	/** Useful constants to use mid-loop */
+	const lastColumn = numColumns - 1;
+	const secondLast = numColumns - 2;
+	
 	
 	let s = "";
 	
 	/** Add the top divider */
 	if(borders){
-		let chars = borderChars.substr(noHeaders ? 24 : 0, 7);
+		let chars = borderChars.substr(noHeaders ? 30 : 0, 9);
 		
 		s += chars[0];
 		for(let r = 0; r < numColumns; ++r)
-			s += chars[r ? (r < numColumns - 1 ? 3 : 5) : 1]
-				.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-				+ chars[r < numColumns - 1 ? 2 : 6];
+			s += chars[r
+					? r < secondLast
+						? 3
+						: r === secondLast
+							? 5
+							: 7
+					: 1
+				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				+ chars[r
+					? r < lastColumn
+						? r
+							? r < secondLast
+								? 4
+								: 6
+							: 6
+						: 8
+					: 2
+				];
 		s += "\n";
 	}
 	
@@ -137,16 +156,40 @@ function table(values, options){
 			/** We're displaying borders */
 			if(borders){
 				
-				/** Left-edge/first cell */
-				if(!i) leftBorder = borderChars[inHeader ? 8 : 32];
+				/** First column */
+				if(!i){
+					leftBorder = borderChars[inHeader
+						? 10
+						: 40
+					];
+					rightBorder = borderChars[inHeader
+						? 12
+						: 42
+					];
+				}
 				
 				
-				/** Right-edge/last cell */
-				if(i >= numColumns - 1)
-					rightBorder = borderChars[inHeader ? 14 : 38];
+				/** Last column */
+				else if(i >= secondLast)
+					rightBorder = borderChars[
+						i === secondLast
+							? inHeader
+								? 16
+								: 46
+							: inHeader
+								? 18
+								: 48
+					];
 				
-				/** Neither */
-				else rightBorder = borderChars[inHeader ? 10 : 34];
+				/** Centre */
+				else rightBorder = borderChars[inHeader
+						? i
+							? 14
+							: 12
+						: i
+							? 44
+							: 42
+					];
 			}
 			
 			
@@ -157,6 +200,7 @@ function table(values, options){
 				" ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length) +
 				rightBorder;
 		}
+		
 		
 		s += "\n";
 		
@@ -169,15 +213,27 @@ function table(values, options){
 				
 				/** Add a divider */
 				if(borders){
-					s += borderChars[16];
+					s += borderChars[20];
 					for(let r = 0; r < numColumns; ++r)
-						s += borderChars[r ? (r < numColumns - 1 ? 19 : 21) : 17]
+						s += borderChars[r
+								? r < secondLast
+									? 23
+									: r === secondLast
+										? 25
+										: 27
+								: 21]
 							.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-							+ borderChars[r < numColumns - 1 ? 18 : 22];
+							+ borderChars[r < lastColumn
+								? 22
+								: r < secondLast
+									? 25
+									: 28
+							];
 					s += "\n";
 				}
 			}
 		}
+		
 		
 		/** Nah, somewhere in the body */
 		else{
@@ -187,11 +243,24 @@ function table(values, options){
 			
 			/** Nope, no more breakage. Add a divider? */
 			else if(borders && r < rowCount - 1){
-				s += borderChars[41];
+				s += borderChars[50];
 				for(let r = 0; r < numColumns; ++r)
-					s += borderChars[r ? (r < numColumns - 1 ? 44 : 46) : 42]
-						.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-						+ borderChars[r < numColumns - 1 ? 43 : 47];
+					s += borderChars[r
+						? r < secondLast
+							? 53
+							: r === secondLast
+								? 55
+								: 57
+						: 51
+					].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+					+ borderChars[r < secondLast
+						? r
+							? 54
+							: 52
+						: r === secondLast
+							? 56
+							: 58
+					];
 				s += "\n";
 			}
 		}
@@ -200,11 +269,24 @@ function table(values, options){
 	
 	/** Add the closing border to the bottom of our table */
 	if(borders){
-		s += borderChars[49];
+		s += borderChars[60];
 		for(let r = 0; r < numColumns; ++r)
-			s += borderChars[r ? (r < numColumns - 1 ? 52 : 54) : 50]
-				.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-				+ borderChars[r < numColumns - 1 ? 51 : 55];
+			s += borderChars[r
+				? r < secondLast
+					? 63
+					: r === lastColumn
+						? 67
+						: 65
+				: 61
+			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+			+ borderChars[r
+				? r < secondLast
+					? 64
+					: r === lastColumn
+						? 68
+						: 66
+				: 62
+			];
 	}
 	
 	return s;

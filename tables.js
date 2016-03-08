@@ -35,8 +35,11 @@ function table(values, options){
 		/** Determine the minimum amount of useless whitespace prefixing each line */
 		const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
 		
-		/** Strip leading soft-tabs */
-		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "")
+		/* Clean up and optimise the input **/
+		borderChars = borderChars
+		
+			/** Strip leading soft-tabs */
+			.replace(new RegExp("^ {"+minIndent+"}", "gm"), "")
 		
 			/** Ensure each line is exactly nine characters long */
 			.replace(/$/gm, " ".repeat(9))
@@ -249,8 +252,12 @@ function table(values, options){
 							)
 							.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
 							+ (borderChars[r < lastColumn
-								? 22
-								: r < secondLast
+								? r < secondLast
+									? r
+										? 24
+										: 22
+									: 26
+								: r === secondLast
 									? 25
 									: 28
 							] || " ");

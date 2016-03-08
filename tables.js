@@ -27,9 +27,14 @@ function table(values, options){
 			/** Normalise line-endings, just in case... */
 			.replace(/\r\n/g, "\n")
 			
-			/** Strip blank lines and hard-tabs */
-			.replace(/^[\x20\t]*\n|\n[\x20\t]*(?=\n|$)/gm, "")
-			.replace(/\t+/g, "");
+			/** Strip hard-tabs, as well as blank lines before and after the characters */
+			.replace(/^(?:[\x20\t]*\n)*|(?:\n[\x20\t]*)*$/g, "")
+			.replace(/\t+/g, "")
+			
+			/** Ensure each line is exactly nine characters long */
+			.replace(/$/gm, " ".repeat(9))
+			.replace(/^(.{9}).*$/gm, "$1");
+		
 		
 		/** Determine the minimum amount of useless whitespace prefixing each line */
 		const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
@@ -37,10 +42,25 @@ function table(values, options){
 		/** Strip leading soft-tabs */
 		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "");
 		
-		/** Error-handling: If an author doesn't want any vertical dividers, reinsert blank lines */
-		const blank = "\n" + " ".repeat(9) + "\n";
-		if(" " !== borderChars[11])  borderChars = borderChars.replace(/\n/, blank);
-		if(" " !== borderChars[41])  borderChars = borderChars.substr(0, 39) + blank + borderChars.substr(40);
+		
+		/** Error-handling: Restore any trailing lines that were meant to signify empty dividers */
+		let neededPadding;
+		if(undefined === borderChars[41]){
+			borderChars  += " ".repeat(69 - borderChars.length);
+			neededPadding = true;
+		}
+		
+		
+		/** Error-handling: If an author didn't want any vertical dividers for the header, reinsert blank lines */
+		if((neededPadding && " " === borderChars[1]) || " " !== borderChars[41]){
+			const blank = " ".repeat(9) + "\n";
+			
+			/** Only the top line's missing */
+			if(" " === borderChars[1])
+				borderChars = blank + borderChars;
+			
+			else borderChars = blank + blank + borderChars;
+		}
 	}
 	
 	
@@ -86,27 +106,30 @@ function table(values, options){
 	if(borders){
 		let chars = borderChars.substr(noHeaders ? 30 : 0, 9);
 		
-		s += chars[0] || " ";
-		for(let r = 0; r < numColumns; ++r)
-			s += (chars[r
-					? r < secondLast
-						? 3
-						: r === secondLast
-							? 5
-							: 7
-					: 1
-				] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-				+ (chars[r
-					? r < lastColumn
-						? r
-							? r < secondLast
-								? 4
+		/** Ensure we're not printing a blank row */
+		if(chars.trim()){
+			s += chars[0] || " ";
+			for(let r = 0; r < numColumns; ++r)
+				s += (chars[r
+						? r < secondLast
+							? 3
+							: r === secondLast
+								? 5
+								: 7
+						: 1
+					] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+					+ (chars[r
+						? r < lastColumn
+							? r
+								? r < secondLast
+									? 4
+									: 6
 								: 6
-							: 6
-						: 8
-					: 2
-				] || " ");
-		s += "\n";
+							: 8
+						: 2
+					] || " ");
+			s += "\n";
+		}
 	}
 	
 	

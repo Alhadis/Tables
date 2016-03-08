@@ -15,54 +15,71 @@ function table(values, options){
 	/** Resolve border characters */
 	let borderChars      = "";
 	if(borders){
-		borderChars = (options.borderChars || `
-		  ┏━┳━┳━┳━┓
-		  ┃ ┃ ┃ ┃ ┃
-		  ┡━╇━╇━╇━┩
-		  ┌─┬─┬─┬─┐
-		  │ │ │ │ │
-		  ├─┼─┼─┼─┤
-		  └─┴─┴─┴─┘
-		`)
-			/** Normalise line-endings, just in case... */
-			.replace(/\r\n/g, "\n")
+		
+		/** We were supplied an array */
+		if(Array.isArray(borderChars = options.borderChars)){
+			borderChars = borderChars
+				.map(c => "number" === typeof c ? String.fromCodePoint(c) : (c ? c[0] : " "))
+				.join("")
+				.replace(/(.{9})/g, "$1\n");
 			
-			/** Strip hard-tabs, as well as blank lines before and after the characters */
-			.replace(/^(?:[\x20\t]*\n)*|(?:\n[\x20\t]*)*$/g, "")
-			.replace(/\t+/g, "");
-		
-		
-		/** Determine the minimum amount of useless whitespace prefixing each line */
-		const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
-		
-		/* Clean up and optimise the input **/
-		borderChars = borderChars
-		
-			/** Strip leading soft-tabs */
-			.replace(new RegExp("^ {"+minIndent+"}", "gm"), "")
-		
-			/** Ensure each line is exactly nine characters long */
-			.replace(/$/gm, " ".repeat(9))
-			.replace(/^(.{9}).*$/gm, "$1");
-		
-		
-		/** Error-handling: Restore any trailing lines that were meant to signify empty dividers */
-		let neededPadding;
-		if(undefined === borderChars[41]){
-			borderChars  += " ".repeat(69 - borderChars.length);
-			neededPadding = true;
+			/** Pad the result with whitespace in case the author omitted some trailing lines */
+			if(borderChars.length < 69)
+				borderChars += " ".repeat(69 - borderChars.length);
 		}
 		
 		
-		/** Error-handling: If an author didn't want any vertical dividers for the header, reinsert blank lines */
-		if((neededPadding && " " === borderChars[1]) || " " !== borderChars[41]){
-			const blank = " ".repeat(9) + "\n";
+		/** Nope, it's a string (we'll assume) */
+		else{
+			borderChars = (borderChars || `
+			  ┏━┳━┳━┳━┓
+			  ┃ ┃ ┃ ┃ ┃
+			  ┡━╇━╇━╇━┩
+			  ┌─┬─┬─┬─┐
+			  │ │ │ │ │
+			  ├─┼─┼─┼─┤
+			  └─┴─┴─┴─┘
+			`)
+				/** Normalise line-endings, just in case... */
+				.replace(/\r\n/g, "\n")
+				
+				/** Strip hard-tabs, as well as blank lines before and after the characters */
+				.replace(/^(?:[\x20\t]*\n)*|(?:\n[\x20\t]*)*$/g, "")
+				.replace(/\t+/g, "");
 			
-			/** Only the top line's missing */
-			if(" " === borderChars[1])
-				borderChars = blank + borderChars;
 			
-			else borderChars = blank + blank + borderChars;
+			/** Determine the minimum amount of useless whitespace prefixing each line */
+			const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
+			
+			/* Clean up and optimise the input **/
+			borderChars = borderChars
+			
+				/** Strip leading soft-tabs */
+				.replace(new RegExp("^ {"+minIndent+"}", "gm"), "")
+			
+				/** Ensure each line is exactly nine characters long */
+				.replace(/$/gm, " ".repeat(9))
+				.replace(/^(.{9}).*$/gm, "$1");
+			
+			
+			/** Error-handling: Restore any trailing lines that were meant to signify empty dividers */
+			let neededPadding;
+			if(undefined === borderChars[41]){
+				borderChars  += " ".repeat(69 - borderChars.length);
+				neededPadding = true;
+			}
+			
+			
+			/** Error-handling: If an author didn't want any vertical dividers for the header, reinsert blank lines */
+			if((neededPadding && " " === borderChars[1]) || " " !== borderChars[41]){
+				const blank = " ".repeat(9) + "\n";
+				
+				/** Only the top line's missing */
+				if(" " === borderChars[1])
+					borderChars = blank + borderChars;
+				
+				else borderChars = blank + blank + borderChars;
+			}
 		}
 	}
 	
@@ -335,9 +352,20 @@ let data = fs.readFileSync("list.tsv")
 	.map(e => e.replace(/\\n/g, "\n").split(/\t/g));
 
 
+
+const borderChars = fs.readFileSync("border-demo.txt").toString().replace(/\n+$/, "");
+
 let str = table(data, {
 	width: process.stdout.columns,
 	borders: true,
-	borderChars: fs.readFileSync("border-demo.txt").toString().replace(/\n+$/, "")
+	borderChars: [
+		"┏", "━", "┳", "━", "┳", "━", "┳", "━", "┓",
+		"┃", " ", "┃", " ", "┃", " ", "┃", " ", "┃",
+		"┡", "━", "╇", "━", "╇", "━", "╇", "━", "┩",
+		"┌", "─", "┬", "─", "┬", "─", "┬", "─", "┐",
+		"│", " ", "│", " ", "│", " ", "│", " ", "│",
+		"├", "─", "┼", "─", "┼", "─", "┼", "─", "┤",
+		"└", "─", "┴", "─", "┴", "─", "┴", "─", "┘"
+	]
 });
 console.log(str);

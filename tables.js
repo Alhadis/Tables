@@ -29,18 +29,18 @@ function table(values, options){
 			
 			/** Strip hard-tabs, as well as blank lines before and after the characters */
 			.replace(/^(?:[\x20\t]*\n)*|(?:\n[\x20\t]*)*$/g, "")
-			.replace(/\t+/g, "")
-			
-			/** Ensure each line is exactly nine characters long */
-			.replace(/$/gm, " ".repeat(9))
-			.replace(/^(.{9}).*$/gm, "$1");
+			.replace(/\t+/g, "");
 		
 		
 		/** Determine the minimum amount of useless whitespace prefixing each line */
 		const minIndent = Math.min(...(borderChars.match(/^(\x20*)/gm) || []).map(m => m.length));
 		
 		/** Strip leading soft-tabs */
-		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "");
+		borderChars = borderChars.replace(new RegExp("^ {"+minIndent+"}", "gm"), "")
+		
+			/** Ensure each line is exactly nine characters long */
+			.replace(/$/gm, " ".repeat(9))
+			.replace(/^(.{9}).*$/gm, "$1");
 		
 		
 		/** Error-handling: Restore any trailing lines that were meant to signify empty dividers */

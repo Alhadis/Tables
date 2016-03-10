@@ -19,7 +19,7 @@ const borderChars = fs
 
 let str = table(data, {
 	width: process.stdout.columns,
-	borders: true,
+	borders: false,
 	keepEmptyBorders: false,
 	borderChars: borderChars.replace(/\n+/g, "").split(""),
 	

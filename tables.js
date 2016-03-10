@@ -366,7 +366,7 @@ function table(values, options){
 			else{
 				
 				/** Add a divider? */
-				if(!skip[5] && r < rowCount - 1){
+				if(borders && !skip[5] && r < rowCount - 1){
 					
 					/** Print extra leading characters? */
 					if(beforeRow)

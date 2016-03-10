@@ -61,16 +61,8 @@ function table(values, options){
 				.replace(/^(.{9}).*$/gm, "$1");
 			
 			
-			/** Error-handling: Restore any trailing lines that were meant to signify empty dividers */
-			let neededPadding;
-			if(undefined === borderChars[41]){
-				borderChars  += " ".repeat(69 - borderChars.length);
-				neededPadding = true;
-			}
-			
-			
 			/** Error-handling: If an author didn't want any vertical dividers for the header, reinsert blank lines */
-			if((neededPadding && " " === borderChars[1]) || " " !== borderChars[41]){
+			if(" " === borderChars[1] || undefined === borderChars[41]){
 				const blank = " ".repeat(9) + "\n";
 				
 				/** Only the top line's missing */
@@ -79,6 +71,11 @@ function table(values, options){
 				
 				else borderChars = blank + blank + borderChars;
 			}
+			
+			/** One final check to ensure there's enough space */
+			const expectedMinLength = 69;
+			if(borderChars.length < expectedMinLength)
+				borderChars += " ".repeat(expectedMinLength - borderChars.length);
 		}
 	}
 	
@@ -117,38 +114,64 @@ function table(values, options){
 	/** Useful constants to use mid-loop */
 	const lastColumn = numColumns - 1;
 	const secondLast = numColumns - 2;
+	const topBorder  = borderChars.substr(noHeaders ? 30 : 0, 9);
+	const skip       = (!borders || options.keepEmptyBorders) ? [] : [
+		
+		/**===== ROWS ========================================================
+		/*  0: ┏━┳━┳━┳━┓   */   0 === topBorder.trim().length,
+		/*  1: ┃ ┃ ┃ ┃ ┃   */   0 === borderChars.substr(10, 9).trim().length,
+		/*  2: ┡━╇━╇━╇━┩   */   0 === borderChars.substr(20, 9).trim().length,
+		/*  3: ┌─┬─┬─┬─┐   */   , // See 0
+		/*  4: │ │ │ │ │   */   0 === borderChars.substr(40, 9).trim().length,
+		/*  5: ├─┼─┼─┼─┤   */   0 === borderChars.substr(50, 9).trim().length,
+		/*  6: └─┴─┴─┴─┘   */   0 === borderChars.substr(60, 9).trim().length,
+		
+		/**==== COLUMNS ======================================================
+		/*  7   8   9   10   11   12   13   14   15
+		/*  ┢━━━┷━━━╈━━━━┷━━━━╈━━━━┷━━━━╈━━━━┷━━━━┪
+		/*  ┃   A   ┃    B    ┃    C    ┃    D    ┃
+		/*  ┗━━━━━━━┻━━━━━━━━━┻━━━━━━━━━┻━━━━━━━━━┛
+		*/ ...(s => {
+			const columns = ["", "", "", "", "", "", "", "", "", ""];
+			for(let i = 0; i < s.length; ++i)
+				columns[i % 10] += s[i];
+			return columns.map(s => 0 === s.trim().length);
+		})(borderChars)
+	];
 	
 	
 	let s = "";
 	
 	/** Add the top divider */
-	if(borders){
-		let chars = borderChars.substr(noHeaders ? 30 : 0, 9);
+	if(borders && !skip[0]){
 		
-		/** Ensure we're not printing a blank row */
-		if(chars.trim()){
-			s += chars[0] || " ";
-			for(let r = 0; r < numColumns; ++r)
-				s += (chars[r
-						? r < secondLast
+		if(!skip[7])
+			s += topBorder[0];
+		
+		for(let r = 0; r < numColumns; ++r){
+			const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r
+			
+			s += topBorder[
+				3 === columnIndex
+					? 7
+					: 2 === columnIndex
+						? 5
+						: columnIndex
 							? 3
-							: r === secondLast
-								? 5
-								: 7
-						: 1
-					] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-					+ (chars[r
-						? r < lastColumn
-							? r
-								? r < secondLast
-									? 4
-									: 6
-								: 6
-							: 8
-						: 2
-					] || " ");
-			s += "\n";
+							: 1
+			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+			
+			+ (topBorder[
+				3 === columnIndex
+					? (skip[15] ? -1 : 8)
+					: 2 === columnIndex
+						? (skip[13] ? -1 : 6)
+						: columnIndex
+							? (skip[11] ? -1 : 4)
+							: (skip[9]  ? -1 : 2)
+			] || "");
 		}
+		s += "\n";
 	}
 	
 	
@@ -192,6 +215,10 @@ function table(values, options){
 					values[r + L + 1][i] = lines[L];
 			}
 			
+			/** Ascertain which border-column we're effectively in */
+			const columnIndex = i === lastColumn ? 3 : i === secondLast ? 2 : +!!i;
+			
+			
 			let leftBorder  = "";
 			let rightBorder = "";
 			
@@ -199,49 +226,35 @@ function table(values, options){
 			if(borders){
 				
 				/** First column */
-				if(!i){
-					leftBorder = borderChars[inHeader
-						? 10
-						: 40
-					] || " ";
-					rightBorder = borderChars[inHeader
-						? 12
-						: 42
-					] || " ";
+				if(!columnIndex){
+					if(!skip[7]) leftBorder  = borderChars[inHeader ? 10 : 40];
+					if(!skip[9]) rightBorder = borderChars[inHeader ? 12 : 42];
+				}
+								
+				/** Last column */
+				else if(3 === columnIndex){
+					if(!skip[15])
+						rightBorder = borderChars[inHeader ? 18 : 48];
 				}
 				
-				
-				/** Last column */
-				else if(i >= secondLast)
-					rightBorder = borderChars[
-						i === secondLast
-							? inHeader
-								? 16
-								: 46
-							: inHeader
-								? 18
-								: 48
-					] || " ";
+				/** Second last */
+				else if(2 === columnIndex){
+					if(!skip[13])
+						rightBorder = borderChars[inHeader ? 16 : 46];
+				}
 				
 				/** Centre */
-				else
-					rightBorder = borderChars[inHeader
-						? i
-							? 14
-							: 12
-						: i
-							? 44
-							: 42
-					] || " ";
+				else if(!skip[11])
+					rightBorder = borderChars[inHeader ? 14 : 44];
 			}
 			
 			
 			/** Add the cell to the output string */
-			s += leftBorder +
-				" ".repeat(paddingLeft) +
-				text +
-				" ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length) +
-				rightBorder;
+			s += leftBorder
+				+ " ".repeat(paddingLeft)
+				+ text
+				+ " ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length)
+				+ rightBorder;
 		}
 		
 		
@@ -255,28 +268,33 @@ function table(values, options){
 				inHeader = false;
 				
 				/** Add a divider */
-				if(borders){
-					s += borderChars[20] || " ";
-					for(let r = 0; r < numColumns; ++r)
-						s += (borderChars[r
-								? r < secondLast
-									? 23
-									: r === secondLast
-										? 25
-										: 27
-								: 21] || " "
-							)
-							.repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-							+ (borderChars[r < lastColumn
-								? r < secondLast
-									? r
-										? 24
-										: 22
-									: 26
-								: r === secondLast
+				if(!skip[2] && borders){
+					if(!skip[7])
+						s += borderChars[20];
+					
+					for(let r = 0; r < numColumns; ++r){
+						const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
+						
+						s += borderChars[
+							3 === columnIndex
+								? 27
+								: 2 === columnIndex
 									? 25
-									: 28
-							] || " ");
+									: columnIndex
+										? 23
+										: 21
+						].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+						
+						+ (borderChars[
+							3 === columnIndex
+								? (skip[15] ? -1 : 28)
+								: 2 === columnIndex
+									? (skip[13] ? -1 : 26)
+									: columnIndex
+										? (skip[11] ? -1 : 24)
+										: (skip[9]  ? -1 : 22)
+						] || "");
+					}
 					s += "\n";
 				}
 			}
@@ -290,52 +308,68 @@ function table(values, options){
 			if(buffer) --buffer;
 			
 			/** Nope, no more breakage. Add a divider? */
-			else if(borders && r < rowCount - 1){
-				s += borderChars[50] || " ";
-				for(let r = 0; r < numColumns; ++r)
-					s += (borderChars[r
-						? r < secondLast
-							? 53
-							: r === secondLast
+			else if(!skip[5] && r < rowCount - 1){
+				
+				if(!skip[7])
+					s += borderChars[50];
+				
+				for(let r = 0; r < numColumns; ++r){
+					const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
+					
+					s += borderChars[
+						3 === columnIndex
+							? 57
+							: 2 === columnIndex
 								? 55
-								: 57
-						: 51
-					] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-					+ (borderChars[r < secondLast
-						? r
-							? 54
-							: 52
-						: r === secondLast
-							? 56
-							: 58
-					] || " ");
+								: columnIndex
+									? 53
+									: 51
+					].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+					+ (borderChars[
+						3 === columnIndex
+							? (skip[15] ? -1 : 58)
+							: 2 === columnIndex
+								? (skip[13] ? -1 : 56)
+								: columnIndex
+									? (skip[11] ? -1 : 54)
+									: (skip[9]  ? -1 : 52)
+					] || "");
+				}
 				s += "\n";
 			}
 		}
 	}
 	
 	
-	/** Add the closing border to the bottom of our table */
-	if(borders){
-		s += borderChars[60] || " ";
-		for(let r = 0; r < numColumns; ++r)
-			s += (borderChars[r
-				? r < secondLast
-					? 63
-					: r === lastColumn
-						? 67
-						: 65
-				: 61
-			] || " ").repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-			+ (borderChars[r
-				? r < secondLast
-					? 64
-					: r === lastColumn
-						? 68
-						: 66
-				: 62
-			] || " ");
+	/** Add the closing border to the bottom of our table (assuming there's one to display) */
+	if(borders && !skip[6]){
+		if(!skip[7]) s += borderChars[60];
+		
+		for(let r = 0; r < numColumns; ++r){
+			const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
+			s += borderChars[
+				3 === columnIndex
+					? 67
+					: 2 === columnIndex
+						? 65
+						: columnIndex
+							? 63
+							: 61
+			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+			+ (borderChars[
+				3 === columnIndex
+					? (skip[15] ? -1 : 68)
+					: 2 === columnIndex
+						? (skip[13] ? -1 : 66)
+						: columnIndex
+							? (skip[11] ? -1 : 64)
+							: (skip[9]  ? -1 : 62)
+			] || "");
+		}
 	}
+	
+	/** Oops. Guess we didn't need that superfluous newline, then */
+	else s = s.replace(/\n$/, "");
 	
 	return s;
 }

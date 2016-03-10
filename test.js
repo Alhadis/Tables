@@ -21,7 +21,16 @@ let str = table(data, {
 	width: process.stdout.columns,
 	borders: true,
 	keepEmptyBorders: false,
-	borderChars: borderChars.replace(/\n+/g, "").split("")
+	borderChars: borderChars.replace(/\n+/g, "").split(""),
+	
+	beforeRow: (row, column, rowData) => {
+		return row % 2
+			? "\x1B[48;5;28m" /* Odd:  Green */
+			: "\x1B[48;5;27m" /* Even: Blue  */
+	},
+	afterRow:  (row, column, rowData) => {
+		return "\x1B[0m";
+	}
 });
 
 console.log(str);

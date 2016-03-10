@@ -11,6 +11,12 @@ function table(values, options){
 	let padding          = paddingLeft + paddingRight;
 	let width            = options.width;
 	
+	const beforeRow      = options.beforeRow;
+	const afterRow       = options.afterRow;
+	const beforeRowIsFn  = "function" === typeof beforeRow;
+	const afterRowIsFn   = "function" === typeof afterRow;
+	
+	
 	/** Resolve border characters */
 	let borderChars      = "";
 	if(borders){
@@ -107,6 +113,10 @@ function table(values, options){
 	let buffer = 0;
 	
 	
+	/** Actual row of data being printed - excludes "extra rows" inserted for multiline values */
+	let realRow = 0;
+	
+	
 	/** Flag monitoring whether we're currently within the header row(s) */
 	let inHeader = !noHeaders;
 	
@@ -145,6 +155,13 @@ function table(values, options){
 	/** Add the top divider */
 	if(borders && !skip[0]){
 		
+		/** Print extra leading characters? */
+		if(beforeRow)
+			s += beforeRowIsFn
+				? beforeRow.call(null, 0, 0)
+				: beforeRow;
+		
+		/** Add leftmost border unless there's nothing there */
 		if(!skip[7])
 			s += topBorder[0];
 		
@@ -171,6 +188,12 @@ function table(values, options){
 							: (skip[9]  ? -1 : 2)
 			] || "");
 		}
+		
+		/** Add extra trailing characters? */
+		if(afterRow)
+			s += afterRowIsFn
+				? afterRow.call(null, 0, numColumns)
+				: afterRow;
 		s += "\n";
 	}
 	
@@ -179,6 +202,14 @@ function table(values, options){
 	for(let r = 0, rowCount = values.length; r < rowCount; ++r){
 		let row = values[r];
 		
+		/** Print extra leading characters? */
+		if(beforeRow)
+			s += beforeRowIsFn
+				? beforeRow.call(null, realRow, 0, row)
+				: beforeRow;
+		
+		
+		/** Loop through each of the row's cells */
 		for(let i = 0; i < numColumns; ++i){
 			let text = row[i] || "";
 			
@@ -258,7 +289,14 @@ function table(values, options){
 		}
 		
 		
+		/** Add extra trailing characters? */
+		if(afterRow)
+			s += afterRowIsFn
+				? afterRow.call(null, realRow, numColumns, row)
+				: afterRow;
 		s += "\n";
+		
+		
 		
 		/** Are/were we printing the header rows? */
 		if(inHeader){
@@ -269,6 +307,13 @@ function table(values, options){
 				
 				/** Add a divider */
 				if(!skip[2] && borders){
+					
+					/** Print extra leading characters? */
+					if(beforeRow)
+						s += beforeRowIsFn
+							? beforeRow.call(null, realRow, 0)
+							: beforeRow;
+					
 					if(!skip[7])
 						s += borderChars[20];
 					
@@ -295,8 +340,18 @@ function table(values, options){
 										: (skip[9]  ? -1 : 22)
 						] || "");
 					}
+					
+					
+					/** Add extra trailing characters? */
+					if(afterRow)
+						s += afterRowIsFn
+							? afterRow.call(null, realRow, numColumns)
+							: afterRow;
+					
 					s += "\n";
 				}
+			
+				++realRow;
 			}
 		}
 		
@@ -307,35 +362,54 @@ function table(values, options){
 			/** Decree the rowBuffer count if we're still making up for line-breaks */
 			if(buffer) --buffer;
 			
-			/** Nope, no more breakage. Add a divider? */
-			else if(!skip[5] && r < rowCount - 1){
+			/** Nope, no more breakage */
+			else{
 				
-				if(!skip[7])
-					s += borderChars[50];
-				
-				for(let r = 0; r < numColumns; ++r){
-					const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
+				/** Add a divider? */
+				if(!skip[5] && r < rowCount - 1){
 					
-					s += borderChars[
-						3 === columnIndex
-							? 57
-							: 2 === columnIndex
-								? 55
-								: columnIndex
-									? 53
-									: 51
-					].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-					+ (borderChars[
-						3 === columnIndex
-							? (skip[15] ? -1 : 58)
-							: 2 === columnIndex
-								? (skip[13] ? -1 : 56)
-								: columnIndex
-									? (skip[11] ? -1 : 54)
-									: (skip[9]  ? -1 : 52)
-					] || "");
+					/** Print extra leading characters? */
+					if(beforeRow)
+						s += beforeRowIsFn
+							? beforeRow.call(null, realRow, 0)
+							: beforeRow;
+					
+					if(!skip[7])
+						s += borderChars[50];
+					
+					for(let r = 0; r < numColumns; ++r){
+						const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
+						
+						s += borderChars[
+							3 === columnIndex
+								? 57
+								: 2 === columnIndex
+									? 55
+									: columnIndex
+										? 53
+										: 51
+						].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+						+ (borderChars[
+							3 === columnIndex
+								? (skip[15] ? -1 : 58)
+								: 2 === columnIndex
+									? (skip[13] ? -1 : 56)
+									: columnIndex
+										? (skip[11] ? -1 : 54)
+										: (skip[9]  ? -1 : 52)
+						] || "");
+					}
+					
+					
+					/** Add extra trailing characters? */
+					if(afterRow)
+						s += afterRowIsFn
+							? afterRow.call(null, realRow, numColumns)
+							: afterRow;
+					s += "\n";
 				}
-				s += "\n";
+			
+				++realRow;
 			}
 		}
 	}
@@ -343,6 +417,14 @@ function table(values, options){
 	
 	/** Add the closing border to the bottom of our table (assuming there's one to display) */
 	if(borders && !skip[6]){
+
+		/** Print extra leading characters? */
+		if(beforeRow)
+			s += beforeRowIsFn
+				? beforeRow.call(null, realRow, 0)
+				: beforeRow;
+		
+		
 		if(!skip[7]) s += borderChars[60];
 		
 		for(let r = 0; r < numColumns; ++r){
@@ -366,6 +448,13 @@ function table(values, options){
 							: (skip[9]  ? -1 : 62)
 			] || "");
 		}
+		
+		
+		/** Add extra trailing characters? */
+		if(afterRow)
+			s += afterRowIsFn
+				? afterRow.call(null, realRow, numColumns)
+				: afterRow;
 	}
 	
 	/** Oops. Guess we didn't need that superfluous newline, then */

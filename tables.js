@@ -107,8 +107,9 @@ function table(values, options){
 			numColumns = l;
 		
 		for(let i = 0; i < l; ++i){
-			let cell = row[i];
-			maxLengths[i] = Math.max(cell.length, maxLengths[i] || 0);
+			const cell = row[i];
+			const lineLengths = cell.split(/\n+/g).map(l => l.length);
+			maxLengths[i] = Math.max(...lineLengths, maxLengths[i] || 0);
 		}
 	}
 	

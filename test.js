@@ -23,20 +23,20 @@ let str = table(data, {
 	keepEmptyBorders: false,
 	borderChars: borderChars.replace(/\n+/g, "").split(""),
 	
-	_beforeCell: (row, column, rowData) => {
+	beforeCell: (row, column, rowData) => {
 		return column % 2
 			? "\x1B[48;5;22m" /* Odd:  Green */
 			: "\x1B[48;5;4m"  /* Even: Blue  */
 	},
-	beforeCell: (row, column, rowData) => {
+	beforeCellInside: (row, column, rowData) => {
 		return column % 2
 			? "\x1B[38;5;10m"
 			: "\x1B[38;5;6m"
 	},
-	afterCell: (row, column, rowData) => {
+	afterCellInside: (row, column, rowData) => {
 		return "\x1B[39m";
 	},
-	_afterCell:  (row, column, rowData) => {
+	afterCell:  (row, column, rowData) => {
 		return "\x1B[0m";
 	}
 });

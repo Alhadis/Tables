@@ -11,10 +11,20 @@ function table(values, options){
 	let padding          = paddingLeft + paddingRight;
 	let width            = options.width;
 	
-	const beforeRow      = options.beforeRow;
-	const afterRow       = options.afterRow;
-	const beforeRowIsFn  = "function" === typeof beforeRow;
-	const afterRowIsFn   = "function" === typeof afterRow;
+	/** Formatting */
+	const beforeRow            = options.beforeRow;
+	const beforeCell           = options.beforeCell;
+	const beforeCellInside     = options.beforeCellInside;
+	const afterCellInside      = options.afterCellInside;
+	const afterCell            = options.afterCell;
+	const afterRow             = options.afterRow;
+	const func                 = "function";
+	const beforeRowIsFn        = func === typeof beforeRow;
+	const beforeCellIsFn       = func === typeof beforeCell;
+	const beforeCellInsideIsFn = func === typeof beforeCellInside;
+	const afterCellInsideIsFn  = func === typeof afterCellInside;
+	const afterCellIsFn        = func === typeof afterCell;
+	const afterRowIsFn         = func === typeof afterRow;
 	
 	
 	/** Resolve border characters */
@@ -155,38 +165,56 @@ function table(values, options){
 	/** Add the top divider */
 	if(borders && !skip[0]){
 		
-		/** Print extra leading characters? */
+		/** Row: Before */
 		if(beforeRow)
 			s += beforeRowIsFn
 				? beforeRow.call(null, 0, 0)
 				: beforeRow;
 		
-		/** Add leftmost border unless there's nothing there */
-		if(!skip[7])
-			s += topBorder[0];
+		/** Cell: Before */
+		if(beforeCell)
+			s += beforeCellIsFn
+				? beforeCell.call(null, 0, 0)
+				: beforeCell;
 		
+		
+		/** Add leftmost border unless there's nothing there */
+		if(!skip[7]) s += topBorder[0];
+		
+		
+		/** Loop through each column */
 		for(let r = 0; r < numColumns; ++r){
 			const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r
 			
-			s += topBorder[
-				3 === columnIndex
-					? 7
-					: 2 === columnIndex
-						? 5
-						: columnIndex
-							? 3
-							: 1
-			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+			/** Cell: Before */
+			if(r && beforeCell)
+				s += beforeCellIsFn
+					? beforeCell.call(null, 0, r)
+					: beforeCell;
 			
-			+ (topBorder[
-				3 === columnIndex
-					? (skip[15] ? -1 : 8)
-					: 2 === columnIndex
-						? (skip[13] ? -1 : 6)
-						: columnIndex
-							? (skip[11] ? -1 : 4)
-							: (skip[9]  ? -1 : 2)
-			] || "");
+			s +=
+				(beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, 0, r) : beforeCellInside : "")
+				+ topBorder[
+					3 === columnIndex
+						? 7
+						: 2 === columnIndex
+							? 5
+							: columnIndex
+								? 3
+								: 1
+				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				
+				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, 0, r) : afterCellInside : "")
+				+ (topBorder[
+					3 === columnIndex
+						? (skip[15] ? -1 : 8)
+						: 2 === columnIndex
+							? (skip[13] ? -1 : 6)
+							: columnIndex
+								? (skip[11] ? -1 : 4)
+								: (skip[9]  ? -1 : 2)
+				] || "")
+				+ (afterCell ? afterCellIsFn ? afterCell.call(null, 0, r) : afterCell : "");
 		}
 		
 		/** Add extra trailing characters? */
@@ -281,11 +309,16 @@ function table(values, options){
 			
 			
 			/** Add the cell to the output string */
-			s += leftBorder
+			s +=
+				(beforeCell ? beforeCellIsFn ? beforeCell.call(null, realRow, i, row, text) : beforeCell : "")
+				+ leftBorder
+				+ (beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, realRow, i, row, text) : beforeCellInside : "")
 				+ " ".repeat(paddingLeft)
 				+ text
 				+ " ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length)
-				+ rightBorder;
+				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, i, row, text) : afterCellInside : "")
+				+ rightBorder
+				+ (afterCell ? afterCellIsFn ? afterCell.call(null, realRow, i, row, text) : afterCell : "");
 		}
 		
 		
@@ -308,41 +341,58 @@ function table(values, options){
 				/** Add a divider */
 				if(!skip[2] && borders){
 					
-					/** Print extra leading characters? */
+					/** Row: Before */
 					if(beforeRow)
 						s += beforeRowIsFn
 							? beforeRow.call(null, realRow, 0)
 							: beforeRow;
 					
-					if(!skip[7])
-						s += borderChars[20];
+					/** Cell: Before */
+					if(beforeCell)
+						s += beforeCellIsFn
+							? beforeCell.call(null, realRow, 0, row)
+							: beforeCell;
 					
+					
+					/** Add the leftmost border character */
+					if(!skip[7]) s += borderChars[20];
+					
+					/** Loop through each column */
 					for(let r = 0; r < numColumns; ++r){
 						const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
 						
-						s += borderChars[
-							3 === columnIndex
-								? 27
-								: 2 === columnIndex
-									? 25
-									: columnIndex
-										? 23
-										: 21
-						].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+						/** Cell: Before */
+						if(r && beforeCell)
+							s += beforeCellIsFn
+								? beforeCell.call(null, realRow, r, row)
+								: beforeCell;
 						
-						+ (borderChars[
-							3 === columnIndex
-								? (skip[15] ? -1 : 28)
-								: 2 === columnIndex
-									? (skip[13] ? -1 : 26)
-									: columnIndex
-										? (skip[11] ? -1 : 24)
-										: (skip[9]  ? -1 : 22)
-						] || "");
+						s +=
+							(beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, realRow, r, row) : beforeCellInside : "")
+							+ borderChars[
+								3 === columnIndex
+									? 27
+									: 2 === columnIndex
+										? 25
+										: columnIndex
+											? 23
+											: 21
+							].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+							+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r, row) : afterCellInside : "")
+							+ (borderChars[
+								3 === columnIndex
+									? (skip[15] ? -1 : 28)
+									: 2 === columnIndex
+										? (skip[13] ? -1 : 26)
+										: columnIndex
+											? (skip[11] ? -1 : 24)
+											: (skip[9]  ? -1 : 22)
+							] || "")
+							+ (afterCell ? afterCellIsFn ? afterCell.call(null, realRow, r, row) : afterCell : "");
 					}
 					
 					
-					/** Add extra trailing characters? */
+					/** Row: After */
 					if(afterRow)
 						s += afterRowIsFn
 							? afterRow.call(null, realRow, numColumns)
@@ -368,40 +418,58 @@ function table(values, options){
 				/** Add a divider? */
 				if(borders && !skip[5] && r < rowCount - 1){
 					
-					/** Print extra leading characters? */
+					/** Row: Before */
 					if(beforeRow)
 						s += beforeRowIsFn
 							? beforeRow.call(null, realRow, 0)
 							: beforeRow;
 					
-					if(!skip[7])
-						s += borderChars[50];
+					/** Cell: Before */
+					if(beforeCell)
+						s += beforeCellIsFn
+							? beforeCell.call(null, realRow, 0, row)
+							: beforeCell;
 					
+					
+					/** Add the leftmost border character */
+					if(!skip[7]) s += borderChars[50];
+					
+					/** Loop through each column */
 					for(let r = 0; r < numColumns; ++r){
 						const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
 						
-						s += borderChars[
-							3 === columnIndex
-								? 57
-								: 2 === columnIndex
-									? 55
-									: columnIndex
-										? 53
-										: 51
-						].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-						+ (borderChars[
-							3 === columnIndex
-								? (skip[15] ? -1 : 58)
-								: 2 === columnIndex
-									? (skip[13] ? -1 : 56)
-									: columnIndex
-										? (skip[11] ? -1 : 54)
-										: (skip[9]  ? -1 : 52)
-						] || "");
+						/** Cell: Before */
+						if(r && beforeCell)
+							s += beforeCellIsFn
+								? beforeCell.call(null, realRow, r, row)
+								: beforeCell;
+						
+						s +=
+							(beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, realRow, r, row) : beforeCellInside : "")
+							+ borderChars[
+								3 === columnIndex
+									? 57
+									: 2 === columnIndex
+										? 55
+										: columnIndex
+											? 53
+											: 51
+							].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+							+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r, row) : afterCellInside : "")
+							+ (borderChars[
+								3 === columnIndex
+									? (skip[15] ? -1 : 58)
+									: 2 === columnIndex
+										? (skip[13] ? -1 : 56)
+										: columnIndex
+											? (skip[11] ? -1 : 54)
+											: (skip[9]  ? -1 : 52)
+							] || "")
+							+ (afterCell ? afterCellIsFn ? afterCell.call(null, realRow, r, row) : afterCell : "");
 					}
 					
 					
-					/** Add extra trailing characters? */
+					/** Row: After */
 					if(afterRow)
 						s += afterRowIsFn
 							? afterRow.call(null, realRow, numColumns)
@@ -418,39 +486,58 @@ function table(values, options){
 	/** Add the closing border to the bottom of our table (assuming there's one to display) */
 	if(borders && !skip[6]){
 
-		/** Print extra leading characters? */
+		/** Row: Before */
 		if(beforeRow)
 			s += beforeRowIsFn
 				? beforeRow.call(null, realRow, 0)
 				: beforeRow;
 		
+		/** Cell: Before */
+		if(beforeCell)
+			s += beforeCellIsFn
+				? beforeCell.call(null, realRow, 0)
+				: beforeCell;
 		
+		
+		/** Add leftmost border character */
 		if(!skip[7]) s += borderChars[60];
 		
+		/** Loop through each column */
 		for(let r = 0; r < numColumns; ++r){
 			const columnIndex = r === lastColumn ? 3 : r === secondLast ? 2 : +!!r;
-			s += borderChars[
-				3 === columnIndex
-					? 67
-					: 2 === columnIndex
-						? 65
-						: columnIndex
-							? 63
-							: 61
-			].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
-			+ (borderChars[
-				3 === columnIndex
-					? (skip[15] ? -1 : 68)
-					: 2 === columnIndex
-						? (skip[13] ? -1 : 66)
-						: columnIndex
-							? (skip[11] ? -1 : 64)
-							: (skip[9]  ? -1 : 62)
-			] || "");
+			
+			/** Cell: Before */
+			if(r && beforeCell)
+				s += beforeCellIsFn
+					? beforeCell.call(null, realRow, r)
+					: beforeCell;
+			
+			s +=
+				(beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, realRow, r) : beforeCellInside : "")
+				+ borderChars[
+					3 === columnIndex
+						? 67
+						: 2 === columnIndex
+							? 65
+							: columnIndex
+								? 63
+								: 61
+				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r) : afterCellInside : "")
+				+ (borderChars[
+					3 === columnIndex
+						? (skip[15] ? -1 : 68)
+						: 2 === columnIndex
+							? (skip[13] ? -1 : 66)
+							: columnIndex
+								? (skip[11] ? -1 : 64)
+								: (skip[9]  ? -1 : 62)
+				] || "")
+				+ (afterCell ? afterCellIsFn ? afterCell.call(null, realRow, r) : afterCell : "");
 		}
 		
 		
-		/** Add extra trailing characters? */
+		/** Row: After */
 		if(afterRow)
 			s += afterRowIsFn
 				? afterRow.call(null, realRow, numColumns)

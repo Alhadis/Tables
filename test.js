@@ -18,7 +18,7 @@ const borderChars = fs
 	.replace(/\n+$/, "");
 
 let str = table(data, {
-	width: process.stdout.columns,
+	width: process.argv[2] || process.stdout.columns,
 	borders: true,
 	keepEmptyBorders: false,
 	borderChars: borderChars.replace(/\n+/g, "").split(""),

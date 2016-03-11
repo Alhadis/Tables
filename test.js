@@ -2,6 +2,7 @@
 "use strict";
 
 global.puts = puts;
+global.log  = log;
 const table = require("./tables.js");
 const fs    = require("fs");
 let data    = fs.readFileSync("list.tsv")
@@ -19,6 +20,9 @@ const borderChars = fs
 
 let str = table(data, {
 	width: process.argv[2] || process.stdout.columns,
+	paddingLeft: 1,
+	paddingRight: 2,
+	//padding: 0,
 	borders: true,
 	keepEmptyBorders: false,
 	borderChars: borderChars.replace(/\n+/g, "").split(""),
@@ -47,4 +51,9 @@ console.log(str);
 /** Print a string with a coloured background */
 function puts(s){
 	console.log("\x1B[48;5;27m" + s + "\x1B[0m", "\n");
+}
+
+/** Less patient way to write to STDERR */
+function log(){
+	console.warn(...arguments);
 }

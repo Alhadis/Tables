@@ -1,5 +1,5 @@
 # Intended width of the printed table
-width := 200
+width := 160
 
 
 # I have `m` aliased to `make`.

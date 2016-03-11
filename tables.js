@@ -122,26 +122,7 @@ function table(values, options){
 		}
 	}
 	
-	/** Ascertain the minimum width required to fit the whole table */
-	const minWidth = maxLengths.reduce((a, b) => a + b + padding + (borders ? 1 : 0));
 	
-	/** If a desired width was specified, calculate a multiplier */
-	const sizeModifier = width ? (width / minWidth) : 1;
-	
-
-	/** Number of extra rows inserted to contain a multi-line value */
-	let buffer = 0;
-	
-	
-	/** Actual row of data being printed - excludes "extra rows" inserted for multiline values */
-	let realRow = 0;
-	
-	
-	/** Flag monitoring whether we're currently within the header row(s) */
-	let inHeader = !noHeaders;
-	
-	
-	/** Useful constants to use mid-loop */
 	const lastColumn = numColumns - 1;
 	const secondLast = numColumns - 2;
 	const topBorder  = borderChars.substr(noHeaders ? 30 : 0, 9);
@@ -170,6 +151,57 @@ function table(values, options){
 	];
 	
 	
+	/** Ascertain the minimum width required to fit the whole table */
+	const skipBorders = [];
+	const minWidth = maxLengths.reduce((total, value, index) => {
+		const borderGroup  = index === lastColumn ? 3 : index === secondLast ? 2 : +!!index;
+		skipBorders[index] = 3 === borderGroup ? skip[15] : 2 === borderGroup ? skip[13] : borderGroup ? skip[11] : skip[9];
+		return total + value + padding + (skipBorders[index] ? 0 : 1);
+	});
+	
+	
+	/** If a desired width was specified, calculate a multiplier */
+	const sizeModifier = width ? (width / minWidth) : 1;
+	
+	/** Calculate the absolute width of each column, padding/borders included */
+	let actualWidth = 0;
+	const columnWidths = maxLengths.map((size, index) => {
+		let width = Math.round(size * sizeModifier) + padding + (skipBorders[index] ? 0 : 1);
+		actualWidth += width;
+		return width;
+	});
+	
+	
+	/** We were given a target width, and round-off weirdness made us miss it. Fix that shit */
+	if(width && actualWidth != width){
+		const overflow = actualWidth - width;
+		const sorted   = columnWidths.map((width, index) => [width, index]).sort((a, b) => {
+			if(a[0] < b[0]) return 1;
+			if(a[0] > b[0]) return -1;
+			return 0;
+		});
+		
+		console.info("Correcting width: " + overflow);
+		for(let i = 0, l = Math.abs(overflow); i < l; ++i)
+			columnWidths[sorted[i % sorted.length][1]] += overflow > 0 ? -1 : 1;
+	}
+	
+	
+	/** Number of extra rows inserted to contain a multi-line value */
+	let buffer = 0;
+	
+	
+	/** Actual row of data being printed - excludes "extra rows" inserted for multiline values */
+	let realRow = 0;
+	
+	
+	/** Flag monitoring whether we're currently within the header row(s) */
+	let inHeader = !noHeaders;
+	
+	
+	
+
+	/** Output */
 	let s = "";
 	
 	/** Add the top divider */
@@ -212,7 +244,7 @@ function table(values, options){
 							: columnIndex
 								? 3
 								: 1
-				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				].repeat(columnWidths[r])
 				
 				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, 0, r) : afterCellInside : "")
 				+ (topBorder[
@@ -325,7 +357,7 @@ function table(values, options){
 				+ (beforeCellInside ? beforeCellInsideIsFn ? beforeCellInside.call(null, realRow, i, row, text) : beforeCellInside : "")
 				+ " ".repeat(paddingLeft)
 				+ text
-				+ " ".repeat(Math.round(padding + (maxLengths[i] * sizeModifier)) - text.length)
+				+ " ".repeat(Math.max(0, columnWidths[i] - text.length - paddingLeft))
 				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, i, row, text) : afterCellInside : "")
 				+ rightBorder
 				+ (afterCell ? afterCellIsFn ? afterCell.call(null, realRow, i, row, text) : afterCell : "");
@@ -387,7 +419,7 @@ function table(values, options){
 										: columnIndex
 											? 23
 											: 21
-							].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+							].repeat(columnWidths[r])
 							+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r, row) : afterCellInside : "")
 							+ (borderChars[
 								3 === columnIndex
@@ -464,7 +496,7 @@ function table(values, options){
 										: columnIndex
 											? 53
 											: 51
-							].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+							].repeat(columnWidths[r])
 							+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r, row) : afterCellInside : "")
 							+ (borderChars[
 								3 === columnIndex
@@ -532,7 +564,7 @@ function table(values, options){
 							: columnIndex
 								? 63
 								: 61
-				].repeat(padding + 1 + Math.round(maxLengths[r] * sizeModifier))
+				].repeat(columnWidths[r])
 				+ (afterCellInside ? afterCellInsideIsFn ? afterCellInside.call(null, realRow, r) : afterCellInside : "")
 				+ (borderChars[
 					3 === columnIndex

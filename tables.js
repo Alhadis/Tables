@@ -6,10 +6,19 @@ function table(values, options){
 
 	let noHeaders        = options.noHeaders;
 	let borders          = options.borders;
-	let paddingLeft      = options.paddingLeft  || 1;
-	let paddingRight     = options.paddingRight || 1;
-	let padding          = paddingLeft + paddingRight;
 	let width            = options.width;
+	let paddingLeft      = undefined == options.paddingLeft  ? 1 : options.paddingLeft;
+	let paddingRight     = undefined == options.paddingRight ? 1 : options.paddingRight;
+	
+	/** Allow both padding options to be set with "options.padding" */
+	if(undefined != options.padding){
+		paddingLeft  =
+		paddingRight = +options.padding;
+	}
+	
+	/** Store the total horizontal padding for convenience's sake */
+	let padding = paddingLeft + paddingRight;
+	
 	
 	/** Formatting */
 	const beforeRow            = options.beforeRow;

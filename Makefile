@@ -1,3 +1,7 @@
+# Intended width of the printed table
+width := 200
+
+
 # I have `m` aliased to `make`.
 # Hitting one key to test this shit is easier than typing `./tables.js`.
 # Please deal with it, thx. <3 😂
@@ -13,16 +17,17 @@ all:
 #==============================================================================
 # CONFIGURATION
 #==============================================================================
-window-width  := $(shell tput cols)
 
 # Width calculations
-origin := 1
-width  := $(window-width)
-calc   := "m=%s;z=%s;b=1;y=%s;s=z-b-(y/2);o=(b+s+y)-m;if(o>0){s-=o}else{s-=1};s"
-unitws := $(shell printf $(calc)$$'\n' \
-	$(window-width) \
+ttywidth := $(shell tput cols)
+start    := 1
+width    := $(if $(width),$(width),$(ttywidth))
+calc     := "m=%s;z=%s;y=%s;s=z-1-(y/2);o=(1+s+y)-m;if(o>0){s-=o}else{s-=1};s"
+unitws   := $(shell printf $(calc)$$'\n' \
+	$(ttywidth) \
 	$(width) \
 	$(shell printf %s $(width) | wc -c) | bc)
+
 
 # Formatting
 colour-major  := $(shell tput setaf 7)
@@ -41,7 +46,7 @@ endef
 # Print a row of values alongside the ruler
 define ruler-units
 	printf %s $(colour-major)
-	printf $(origin)
+	printf $(start)
 	printf %$(unitws)s ''
 	printf %s$$'\n' $(width)
 	tput sgr0

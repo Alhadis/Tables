@@ -1,0 +1,2 @@
+# Prevent fixtures from being evaluated by GitHub Linguist
+fixtures/* linguist-documentation

@@ -1,0 +1,12 @@
+{
+	"name": "tables",
+	"version": "0.0.1",
+	"description": "Fluid ASCII tables made seriously easy",
+	"keywords": ["table", "tables", "data", "spreadsheet", "column", "columns", "tabular", "ascii", "ansii", "tty", "cli", "terminal"],
+	"repository": "https://github.com/Alhadis/Tables",
+	"engines": { "node": ">=5.0.0" },
+	"dependencies": {},
+	"devDependencies": {
+		"get-options": "*"
+	}
+}

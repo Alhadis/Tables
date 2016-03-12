@@ -6,14 +6,17 @@ use utf8;
 use open           qw< :std :utf8 >;
 use charnames      qw< :full >;
 use feature        qw< unicode_strings >;
-use GetOpt::Long   qw< :config auto_abbrev >;
+use Getopt::Long   qw< :config auto_abbrev >;
 
 
 # Parse CLI options
-my $data_file, $template_file;
+my $data_file;
+my $template_file;
+my $width;
 GetOptions(
 	"data=s"     => \$data_file,
-	"template=s" => \$template_file
+	"template=s" => \$template_file,
+	"width=i"    => \$width
 );
 
 open(my $tsv,      "<", $data_file)     or die("Can't open TSV file");
@@ -40,6 +43,7 @@ my $html_data = do{
 	<$template>;
 };
 
+my $width_attr = " style=\"width: ${width}ch\"" if $width;
 $html_data =~ s/
 	(\t*)
 	
@@ -48,7 +52,7 @@ $html_data =~ s/
 	(\t*<\/table>)/
 	
 	my $t = $1;
-	"$t<table>\n" . do{
+	"$t<table$width_attr>\n" . do{
 		$tsv_data =~ s|^|$t\t|gms;
 		$tsv_data;
 	} . "\n$2"

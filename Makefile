@@ -39,7 +39,10 @@ html: $(fixtures)/dom.htm
 
 # Update the HTML table used for comparison
 $(fixtures)/dom.htm: $(datafile)
-	@$(tasks)/update-html.pl $^ $@
+	@$(tasks)/update-html.pl \
+		--data=$^     \
+		--template=$@ \
+		--width=$(width)
 
 
 
